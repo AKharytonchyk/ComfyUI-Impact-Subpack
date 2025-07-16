@@ -226,6 +226,11 @@ try:
 
     build_torch_whitelist()
 
+    # Add getattr to safe globals for PyTorch 2.6+ compatibility
+    if hasattr(torch.serialization, 'add_safe_globals'):
+        torch.serialization.add_safe_globals([getattr])
+        logging.info("[Impact Pack/Subpack] Added getattr to PyTorch safe globals for YOLO model compatibility")
+
 except Exception as e:
     logging.error(e)
     logging.error("\n!!!!!\n\n[ComfyUI-Impact-Subpack] If this error occurs, please check the following link:\n\thttps://github.com/ltdrdata/ComfyUI-Impact-Pack/blob/Main/troubleshooting/TROUBLESHOOTING.md\n\n!!!!!\n")
@@ -395,6 +400,10 @@ def inference_bbox(
     confidence: float = 0.3,
     device: str = "",
 ):
+    # If device is empty and CUDA/ROCm is available, use it
+    if not device and torch.cuda.is_available():
+        device = "cuda"
+    
     pred = model(image, conf=confidence, device=device)
 
     bboxes = pred[0].boxes.xyxy.cpu().numpy()
@@ -434,6 +443,10 @@ def inference_segm(
     confidence: float = 0.3,
     device: str = "",
 ):
+    # If device is empty and CUDA/ROCm is available, use it
+    if not device and torch.cuda.is_available():
+        device = "cuda"
+    
     pred = model(image, conf=confidence, device=device)
 
     bboxes = pred[0].boxes.xyxy.cpu().numpy()
